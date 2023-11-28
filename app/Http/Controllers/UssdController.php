@@ -25,10 +25,13 @@ class UssdController extends Controller
                 switch ($last_response->last_user_code) {
                     case '00':
                         if ($request->text == "1") {
+                            $this->updateCustomerField($request->phoneNumber, "subscription_plan_id", 1);
                             return $this->howManyChildren($request);
                         } elseif ($request->text == "2") {
+                            $this->updateCustomerField($request->phoneNumber, "subscription_plan_id", 2);
                             return $this->howManyChildren($request);
                         } elseif ($request->text == "3") {
+                            $this->updateCustomerField($request->phoneNumber, "subscription_plan_id", 3);
                             return $this->howManyChildren($request);
                         } elseif ($request->text == "4") {
                             return $this->writeResponse("You seleted help", true);
