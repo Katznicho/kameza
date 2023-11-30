@@ -52,13 +52,28 @@ trait CustomerTrait
                 //create a new customer
                 DB::table('customers')->insert([
                     'phone_number' => $phoneNumber,
-                    "subscription_plan_id" => 1
+                    "subscription_plan_id" => 1,
+                    "policy" => Str::random(10),
+                    'created_at' => now(),
+                    'updated_at' => now()
+
                 ]);
                 return false;
             }
         } catch (\Throwable $th) {
             //throw $th;
 
+            return false;
+        }
+    }
+
+    //check if use has an account
+    public function checkIfCustomerHasAccount(string $phoneNumber)
+    {
+        $getUser = DB::table('customers')->where('phone_number', $phoneNumber)->first();
+        if ($getUser) {
+            return true;
+        } else {
             return false;
         }
     }
@@ -106,7 +121,9 @@ trait CustomerTrait
                 'customer_id' => $getUser->id,
                 'subscription_plan_id' => $getUser->subscription_plan_id,
                 //expires after one year
-                'expires_at' => now()->addYear()
+                'expires_at' => now()->addYear(),
+                'created_at' => now(),
+                'updated_at' => now()
             ]);
             return true;
         } catch (\Throwable $th) {
@@ -129,8 +146,42 @@ trait CustomerTrait
             'customer_id' => $getUser->id,
             'reference' => Str::uuid(),
             'payment_mode' => 'ussd',
-            'payment_phone_number' => $payment_phone_number
+            'payment_phone_number' => $payment_phone_number,
+            'created_at' => now(),
+            'updated_at' => now()
         ]);
         return true;
+    }
+
+    public function validateNinNumber(string $nin)
+    {
+        // return (bool)preg_match('/^[A-Z]{2}[A-Z\d]{6}[A-Z]\d{2}[A-Z\d]{4}$/', $nin);
+
+        //length of nin should be 10
+        if (strlen($nin) == 14) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    //get customer details
+    public function getCustomerDetails(string $phoneNumber)
+    {
+        return DB::table('customers')->where('phone_number', $phoneNumber)->first();
+    }
+
+    //get current custoer plan
+    public function getCustomerPlan(string $phoneNumber)
+    {
+        $customer = DB::table('customers')->where('phone_number', $phoneNumber)->first();
+
+        $plan = DB::table('subscription_plans')->where('id', $customer->subscription_plan_id)->first();
+        return $plan;
+    }
+    //get user account
+    public function getUserAccount(string $phoneNumber)
+    {
+        return DB::table('accounts')->where('phone_number', $phoneNumber)->first();
     }
 }

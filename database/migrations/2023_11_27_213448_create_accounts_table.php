@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('phone_number');
             $table->string('account')->default(0);
             $table->string('pin')->nullable();
-            $table->boolean("status")->default(0);
+            $table->boolean("status")->default(1);
             $table->foreignId("customer_id")->references("id")->on("customers")->onDelete("cascade")->nullable();
             $table->foreignId("subscription_plan_id")->references("id")->on("subscription_plans")->onDelete("cascade")->default(1);
             $table->timestamp("expires_at")->nullable();
