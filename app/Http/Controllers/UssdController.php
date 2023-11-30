@@ -200,7 +200,7 @@ class UssdController extends Controller
                         $this->storeUserSession($request, "Initiated Payment");
                         $this->createUserAccount($request->phoneNumber);
                         $this->createTransaction($request->phoneNumber, $this->getTotalAmountToPay($request->phoneNumber), "Payment For Subscription", $payment);
-                        $response = "A payment of UGX . " . $this->getTotalAmountToPay($request->phoneNumber) . " has been initiated\n";
+                        $response = "A payment of UGX  " . $this->getTotalAmountToPay($request->phoneNumber) . " has been initiated\n";
                         return $this->writeResponse($response, true);
                         break;
                     case "PaymentNumber":
@@ -215,7 +215,7 @@ class UssdController extends Controller
                             return $this->writeResponse($response, false);
                         } else {
                             $this->storeUserSession($request, "PaymentCancelled");
-                            $response = "You have cancelled a payment of UGX . " . $this->getTotalAmountToPay($request->phoneNumber) . "\n";
+                            $response = "You have cancelled a payment of UGX  " . $this->getTotalAmountToPay($request->phoneNumber) . "\n";
                             return $this->writeResponse($response, true);
                         }
                         break;
@@ -227,7 +227,7 @@ class UssdController extends Controller
                             $this->storeUserSession($request, "Initiated Payment");
                             $this->createUserAccount($request->phoneNumber);
                             $this->createTransaction($request->phoneNumber, $this->getTotalAmountToPay($request->phoneNumber), "Payment For Subscription", $request->phoneNumber);
-                            $response = "A payment of UGX . " . $this->getTotalAmountToPay($request->phoneNumber) . " has been initiated\n";
+                            $response = "A payment of UGX  " . $this->getTotalAmountToPay($request->phoneNumber) . " has been initiated\n";
                             return $this->writeResponse($response, true);
                         } else {
                             $this->storeUserSession($request, "Payment");

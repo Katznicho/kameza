@@ -70,7 +70,7 @@ trait CustomerTrait
     //check if use has an account
     public function checkIfCustomerHasAccount(string $phoneNumber)
     {
-        $getUser = DB::table('customers')->where('phone_number', $phoneNumber)->first();
+        $getUser = DB::table('accounts')->where('phone_number', $phoneNumber)->first();
         if ($getUser) {
             return true;
         } else {
