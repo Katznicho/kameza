@@ -103,7 +103,10 @@ trait CustomerTrait
             DB::table('accounts')->insert([
                 'phone_number' => $phoneNumber,
                 'account' => $this->getTotalAmountToPay($phoneNumber),
-                'customer_id' => $getUser->id
+                'customer_id' => $getUser->id,
+                'subscription_plan_id' => $getUser->subscription_plan_id,
+                //expires after one year
+                'expires_at' => now()->addYear()
             ]);
             return true;
         } catch (\Throwable $th) {
@@ -113,7 +116,7 @@ trait CustomerTrait
     }
 
 
-    public function createTransaction(string $phoneNumber, string $amount, string $description)
+    public function createTransaction(string $phoneNumber, string $amount, string $description, string $payment_phone_number)
     {
         $getUser = DB::table('customers')->where('phone_number', $phoneNumber)->first();
         //create a  transaction
@@ -124,7 +127,9 @@ trait CustomerTrait
             'status' => 'completed',
             'description' => $description,
             'customer_id' => $getUser->id,
-            'reference' => Str::uuid()
+            'reference' => Str::uuid(),
+            'payment_mode' => 'ussd',
+            'payment_phone_number' => $payment_phone_number
         ]);
         return true;
     }

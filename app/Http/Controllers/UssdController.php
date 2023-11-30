@@ -108,7 +108,7 @@ class UssdController extends Controller
                         if ($payment == "1") {
                             $this->storeUserSession($request, "Initiated Payment");
                             $this->createUserAccount($request->phoneNumber);
-                            $this->createTransaction($request->phoneNumber, $this->getTotalAmountToPay($request->phoneNumber), "Payment For Subscription");
+                            $this->createTransaction($request->phoneNumber, $this->getTotalAmountToPay($request->phoneNumber), "Payment For Subscription", $request->phoneNumber);
                             $response = "A payment of UGX . " . $this->getTotalAmountToPay($request->phoneNumber) . " has been initiated\n";
                             return $this->writeResponse($response, true);
                         } else {

@@ -15,6 +15,8 @@ return new class extends Migration
             $table->id();
             $table->string('phone_number');
             $table->string('amount');
+            $table->string("payment_mode")->nullable();
+            $table->string("payment_phone_number")->nullable();
             $table->enum('type', ['debit', 'credit']);
             $table->string('status');
             $table->text('description');
