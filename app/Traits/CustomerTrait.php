@@ -52,11 +52,9 @@ trait CustomerTrait
                 //create a new customer
                 DB::table('customers')->insert([
                     'phone_number' => $phoneNumber,
-                    "subscription_plan_id" => 1,
                     "policy" => Str::random(10),
                     'created_at' => now(),
                     'updated_at' => now()
-
                 ]);
                 return false;
             }
@@ -70,7 +68,7 @@ trait CustomerTrait
     //check if use has an account
     public function checkIfCustomerHasAccount(string $phoneNumber)
     {
-        $getUser = DB::table('accounts')->where('phone_number', $phoneNumber)->first();
+        $getUser = DB::table('customer_subscription')->where('phone_number', $phoneNumber)->first();
         if ($getUser) {
             return true;
         } else {
@@ -92,34 +90,83 @@ trait CustomerTrait
     public function updateCustomerField(string $phoneNumber, string $field, string $value)
     {
         try {
-            //code...
-            DB::table('customers')->where('phone_number', $phoneNumber)->update([$field => $value]);
+            // Update the specified field for the identified customer_subscription record
+
+            DB::table('customer_subscription')
+                ->where('phone_number', $phoneNumber)
+                ->orderBy('id', 'desc')
+                ->limit(1)
+                ->update([$field => $value]);
+
             return true;
         } catch (\Throwable $th) {
-            //throw $th;
+            return $th->getMessage();
+        }
+    }
+
+    //update customer table with tje  agent id and registration_type set to agent
+
+    public function updateCustomerAgent(string $phoneNumber, string $agent_id)
+    {
+
+        DB::table('customers')
+            ->where('phone_number', $phoneNumber)
+            ->update(['agent_id' => $agent_id, 'registration_type' => 'agent']);
+        return true;
+    }
+
+    //update the customer table with  nin , name and location
+
+    public function updateCustomerDetails(string $phoneNumber, string $nin, string $name, string $location)
+    {
+        DB::table('customers')
+            ->where('phone_number', $phoneNumber)
+            ->update(['nin' => $nin, 'name' => $name, 'location' => $location]);
+        return true;
+    }
+
+
+    public function checkIfAgentExists(string $agent_id)
+    {
+
+        $agent_id =  str_replace(" ", "", $agent_id);
+        $getUser = DB::table('agents')->where('agent_id', $agent_id)->first();
+        if ($getUser) {
+            return true;
+        } else {
             return false;
         }
     }
 
-    public function getTotalAmountToPay(string $phoneNumber)
+    //get agent details
+    public function getAgentDetails(string $agent_id)
     {
-        $getUser = DB::table('customers')->where('phone_number', $phoneNumber)->first();
-        $plan_id  = $getUser->subscription_plan_id;
-        $number_of_children = $getUser->number_of_children;
-        $plan = DB::table('subscription_plans')->where('id', $plan_id)->first();
-        return intval($plan->price) + intval($plan->additional_info_amount) * intval($number_of_children);
+
+        return DB::table('agents')->where('agent_id', $agent_id)->first();
     }
 
-    public function createUserAccount(string $phoneNumber)
+
+    public function getTotalAmountToPay(string $phoneNumber)
+    {
+
+        //get the latest subscription or the last created
+        $getUser = DB::table('customer_subscription')->where('phone_number', $phoneNumber)->orderBy('id', 'desc')->first();
+        $plan_id = $getUser->subscription_plan_id;
+        $plan = DB::table('subscription_plans')->where('id', $plan_id)->first();
+        return intval($plan->price) + intval($plan->additional_info_amount) * intval($getUser->number_of_children);
+    }
+
+
+
+    public function createUserAccount(string $phoneNumber, string $plan_id)
     {
         $getUser = DB::table('customers')->where('phone_number', $phoneNumber)->first();
         try {
             //code...
-            DB::table('accounts')->insert([
+            DB::table('customer_subscription')->insert([
                 'phone_number' => $phoneNumber,
-                'account' => $this->getTotalAmountToPay($phoneNumber),
                 'customer_id' => $getUser->id,
-                'subscription_plan_id' => $getUser->subscription_plan_id,
+                'subscription_plan_id' => $plan_id,
                 //expires after one year
                 'expires_at' => now()->addYear(),
                 'created_at' => now(),
@@ -135,22 +182,30 @@ trait CustomerTrait
 
     public function createTransaction(string $phoneNumber, string $amount, string $description, string $payment_phone_number)
     {
-        $getUser = DB::table('customers')->where('phone_number', $phoneNumber)->first();
-        //create a  transaction
-        DB::table('transactions')->insert([
-            'phone_number' => $phoneNumber,
-            'amount' => $amount,
-            'type' => 'credit',
-            'status' => 'completed',
-            'description' => $description,
-            'customer_id' => $getUser->id,
-            'reference' => Str::uuid(),
-            'payment_mode' => 'ussd',
-            'payment_phone_number' => $payment_phone_number,
-            'created_at' => now(),
-            'updated_at' => now()
-        ]);
-        return true;
+        try {
+            $getUser = DB::table('customers')->where('phone_number', $phoneNumber)->first();
+            $getUserSubscription = DB::table('customer_subscription')->where('phone_number', $phoneNumber)->orderBy('id', 'desc')->first();
+            $plan_id = $getUserSubscription->subscription_plan_id;
+            //create a  transaction
+            DB::table('transactions')->insert([
+                'phone_number' => $phoneNumber,
+                'amount' => $amount,
+                'type' => 'credit',
+                'status' => 'completed',
+                'description' => $description,
+                'customer_id' => $getUser->id,
+                'reference' => Str::uuid(),
+                'subscription_plan_id' => $plan_id,
+                'payment_mode' => 'ussd',
+                'payment_phone_number' => $payment_phone_number,
+                'created_at' => now(),
+                'updated_at' => now()
+            ]);
+            return true;
+        } catch (\Throwable $th) {
+            //throw $th;
+            return $th->getMessage();
+        }
     }
 
     public function validateNinNumber(string $nin)
@@ -182,6 +237,6 @@ trait CustomerTrait
     //get user account
     public function getUserAccount(string $phoneNumber)
     {
-        return DB::table('accounts')->where('phone_number', $phoneNumber)->first();
+        return DB::table('customer_subscription')->where('phone_number', $phoneNumber)->first();
     }
 }

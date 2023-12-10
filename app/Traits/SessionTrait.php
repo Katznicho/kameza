@@ -32,4 +32,20 @@ trait SessionTrait
 
         return $lastUserSession;
     }
+
+    public function storeMessageSession(Request $request, string $status, string $message)
+    {
+       //store message session
+        DB::table('message_sessions')->insert([
+            'linkId' => $request->linkId,
+            'text' => $request->text,
+            'to' => $request->to,
+            'message_id' => $request->message_id,
+            'date' => $request->date,
+            'from' => $request->from,
+            'status' => $status,
+            'message' => $message
+        ]);
+        return true;
+    }
 }

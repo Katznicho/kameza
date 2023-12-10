@@ -16,13 +16,13 @@ return new class extends Migration
             $table->string('phone_number')->unique();
             $table->string('nin')->nullable();
             $table->string("name")->nullable();
-            $table->integer("number_of_children")->default(0);
             $table->string('dob')->nullable();
             $table->string('location')->nullable();
             $table->string("policy")->nullable();
             $table->string("pin")->nullable();
-            $table->foreignId("subscription_plan_id")->references("id")->on("subscription_plans")->onDelete("cascade")->default(1);
-            $table->boolean("is_active")->default(0);
+            $table->boolean("is_active")->default(1);
+            $table->foreignId('agent_id')->nullable()->constrained('agents')->onDelete('cascade');
+            $table->string("registration_type")->default("Self");
             $table->softDeletes();
             $table->timestamps();
         });

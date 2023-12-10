@@ -24,6 +24,8 @@ return new class extends Migration
             $table->string('network_code')->nullable();
             $table->string('service_code')->nullable();
             $table->foreignId("customer_id")->references("id")->on("customers")->onDelete("cascade")->nullable();
+             //subscription id
+            $table->foreignId("subscription_plan_id")->references("id")->on("subscription_plans")->onDelete("cascade")->nullable();
             $table->softDeletes();
             $table->timestamps();
         });

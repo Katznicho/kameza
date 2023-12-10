@@ -11,14 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('accounts', function (Blueprint $table) {
+        Schema::create('customer_subscription', function (Blueprint $table) {
             $table->id();
+            $table->string('customer_id');
+            $table->string('subscription_plan_id');
             $table->string('phone_number');
-            $table->string('account')->default(0);
-            $table->string('pin')->nullable();
-            $table->boolean("status")->default(1);
-            $table->foreignId("customer_id")->references("id")->on("customers")->onDelete("cascade")->nullable();
-            $table->foreignId("subscription_plan_id")->references("id")->on("subscription_plans")->onDelete("cascade")->default(1);
+            $table->integer("number_of_children")->default(0);
+            $table->string('amount')->default(0);
+            $table->boolean('is_amount_paid')->default(0);
+            $table->boolean("is_active")->default(0);
             $table->timestamp("expires_at")->nullable();
             $table->softDeletes();
             $table->timestamps();
@@ -30,6 +31,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('accounts');
+        Schema::dropIfExists('customer_subscription');
     }
 };

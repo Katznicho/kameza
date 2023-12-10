@@ -20,3 +20,4 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 });
 
 Route::post("ussd", [UssdController::class, "process"]);
+Route::post("completeregisration", [UssdController::class,"completeRegistrationThroughSms"]);
