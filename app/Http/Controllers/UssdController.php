@@ -16,64 +16,144 @@ class UssdController extends Controller
     use ResponseTrait, SessionTrait, CustomerTrait, MessageTrait;
 
 
-    private function welcomRegisteredCustomer(Request $request,  $details,  $plan, $account)
+    private function welcomRegisteredCustomer(Request $request,  $details,  $plan)
     {
-        $nextRenewalDate = Carbon::parse($account->expires_at)->format('Y-m-d');
+
 
 
         $response = "Hello : " . $details->name . "\n  Policy Number :" . $details->policy . "\n ";
-        $response .= "Your plan is : " . $plan->name . "\n Next renewal date is :  $nextRenewalDate  " . "\n";
-        $response .= "1. Renew your plan" . "\n";
-        $response .= "2. Change Plan" . "\n";
+        $response .= "Your have  $plan plan(s) \n";
+        $response .= "1. Check Plans" . "\n";
+        $response .= "2. Add Another Plan" . "\n";
         $response .= "3. Contact Support" . "\n";
         $this->storeUserSession($request, "00");
         return $this->writeResponse($response, false);
     }
 
-    public function processCustomerWithccount(Request $request)
+    public function processCustomerWithAccount(Request $request)
     {
         try {
 
             //code...
             $details = $this->getCustomerDetails($request->phoneNumber);
-            $plan = $this->getCustomerPlan($request->phoneNumber);
-            $account = $this->getUserAccount($request->phoneNumber);
+            $total_plans = $this->getCustomerPlans($request->phoneNumber);
             if ($request->text == "") {
-                return $this->welcomRegisteredCustomer($request, $details, $plan, $account);
+                return $this->welcomRegisteredCustomer($request, $details, $total_plans);
             } else {
                 $last_response = $this->getLastUserSession($request->phoneNumber);
 
                 switch ($last_response->last_user_code) {
                     case '00':
                         if ($request->text == "1") {
-                            $this->storeUserSession($request, "RenewPlan");
+                            $this->storeUserSession($request, "Check Plans");
                             return $this->writeResponse("You will be contacted shortly", true);
                         } elseif ($request->text == "2") {
-                            $this->storeUserSession($request, "ChangePlan");
-                            return $this->writeResponse("Change Plan", true);
+                            $this->storeUserSession($request, "Add Another Plan");
+                            return $this->welcomeUser($request);
                         } elseif ($request->text == "3") {
                             return $this->writeResponse("You will be contacted shortly", true);
                         }
                         break;
-                    case "RenewPlan":
+                    case "Check Plans":
                         return $this->welcomeUser($request);
-                        break;
-                    case "ChangePlan":
-                        return $this->welcomeUser($request);
-                        break;
-                    case '2':
-                        return $this->welcomeUserWithAccount($request, $details, $plan);
-                        break;
-                    case '3':
-                        return $this->welcomeUserWithAccount($request, $details, $plan);
-                        break;
+                    case "Plan":
+                        $text =  explode("*", $request->text);
+                        $text = end($text);
+                        if ($text == "1") {
+                            $this->createUserAccount($request->phoneNumber, 1);
+                            return $this->howManyChildren($request);
+                        } elseif ($text == "2") {
+                            $this->createUserAccount($request->phoneNumber, 2);
+                            return $this->howManyChildren($request);
+                        } elseif ($text == "3") {
+                            $this->createUserAccount($request->phoneNumber, 3);
+                            return $this->howManyChildren($request);
+                        } elseif ($text == "4") {
+                            return $this->writeResponse("You seleted help", true);
+                        } else {
+                            return $this->writeResponse("We did not understand your choice", true);
+                        }
+                    case "Children":
+                        $children = $request->text;
+                        $children_num =  explode("*", $children);
+                        $children_num = end($children_num);
+                        //check if children is empty
+                        if ($children_num == "") {
+                            return $this->howManyChildren($request);
+                        }
+                        //check if its not a number
+                        if (!is_numeric(intval($children_num))) {
+                            return $this->howManyChildren($request);
+                        }
+                        //check if its greater than 3
+                        if (intval($children_num) > 3) {
+                            return $this->howManyChildren($request);
+                        }
+                        $this->updateCustomerField($request->phoneNumber, "number_of_children", $children_num);
+                        $this->storeUserSession($request, "Terms and Conditions");
+                        $response = "To Continue Please Accept our terms and conditions\n";
+                        $response .= "1. Accept\n";
+                        $response .= "2. Decline\n";
+                        return $this->writeResponse($response, false);
+                    case "Terms and Conditions":
+                        $terms =  explode("*", $request->text);
+                        $actual_tems =  end($terms);
+                        if ($actual_tems == "1") {
+                            $this->storeUserSession($request, "PaymentNumber");
+                            $total_amount = $this->getTotalAmountToPay($request->phoneNumber);
+                            $this->updateCustomerField($request->phoneNumber, "amount", $total_amount);
+                            $response = "Total amount to pay: UGX  " . $total_amount . "\n";
+                            $response .= "1. Continue\n";
+                            $response .= "2. Cancel\n";
+                            return $this->writeResponse($response, false);
+                        } elseif ($actual_tems == "2") {
+                            $this->storeUserSession($request, "Terms and Conditions");
+                            return $this->writeResponse("Please you must accept our terms and conditions", false);
+                        } else {
+                            return $this->writeResponse("We did not understand your choice", true);
+                        }
+                    case "Payment":
+                        $payment_input = explode("*", $request->text);
+                        $payment =  end($payment_input);
+                        $this->storeUserSession($request, "Initiated Payment");
+                        $this->createUserAccount($request->phoneNumber, 2);
+                        $this->createTransaction($request->phoneNumber, $this->getTotalAmountToPay($request->phoneNumber), "Payment For Subscription", $payment);
+                        $response = "A payment of UGX  " . $this->getTotalAmountToPay($request->phoneNumber) . " has been initiated\n";
+                        return $this->writeResponse($response, true);
+                    case "PaymentNumber":
+                        $payment_input = explode("*", $request->text);
+                        $payment =  end($payment_input);
+                        if ($payment == "1") {
+                            $session_number  = $request->phoneNumber;
+                            $response = "Is this the correct payment number: " . $session_number . "\n";
+                            $response .= "1. Yes\n";
+                            $response .= "2. No\n";
+                            $this->storeUserSession($request, "CheckPaymentNumber");
+                            return $this->writeResponse($response, false);
+                        } else {
+                            $this->storeUserSession($request, "PaymentCancelled");
+                            $response = "You have cancelled a payment of UGX  " . $this->getTotalAmountToPay($request->phoneNumber) . "\n";
+                            return $this->writeResponse($response, true);
+                        }
+                    case "CheckPaymentNumber":
+                        $payment_input = explode("*", $request->text);
+                        $payment =  end($payment_input);
+                        if ($payment == "1") {
+                            $this->storeUserSession($request, "Initiated Payment");
+                            $this->createTransaction($request->phoneNumber, $this->getTotalAmountToPay($request->phoneNumber), "Payment For Subscription", $request->phoneNumber);
+                            $this->updateCustomerField($request->phoneNumber, "is_active", true);
+                            $response = "A payment of UGX  " . $this->getTotalAmountToPay($request->phoneNumber) . " has been initiated\n";
+                            return $this->writeResponse($response, true);
+                        } else {
+                            $this->storeUserSession($request, "Payment");
+                            $response = "Please enter your payment number for example(256781234567)\n";
+                            return $this->writeResponse($response, false);
+                        }
+
                     default:
-                        return $this->welcomeUserWithAccount($request, $details, $plan);
-                        break;
+                        return $this->welcomeUserWithAccount($request, $details, $total_plans);
                 }
             }
-
-            return $this->welcomeUserWithAccount($request, $details, $plan);
         } catch (\Throwable $th) {
             //throw $th;
             return $this->writeResponse($th->getMessage(), true);
@@ -82,13 +162,13 @@ class UssdController extends Controller
 
     public function process(Request $request)
     {
-        // if ($this->checkIfCustomerHasAccount($request->phoneNumber)) {
-        //     return $this->processCustomerWithccount($request);
-        // } else {
-        //     return $this->processCustomerWithOutAccount($request);
-        // }
 
-        return $this->processCustomerWithOutAccount($request);
+
+        if ($this->checkIfCustomerHasAccount($request->phoneNumber)) {
+            return $this->processCustomerWithAccount($request);
+        } else {
+            return $this->processCustomerWithOutAccount($request);
+        }
     }
 
 
@@ -160,9 +240,6 @@ class UssdController extends Controller
                             return $this->howManyChildren($request);
                         }
                         $this->updateCustomerField($request->phoneNumber, "number_of_children", $children_num);
-                        //store user session
-                        // $this->storeUserSession($request, "Name");
-                        // return $this->writeResponse("Please enter your name", false);
                         $this->storeUserSession($request, "Terms and Conditions");
                         $response = "To Continue Please Accept our terms and conditions\n";
                         $response .= "1. Accept\n";

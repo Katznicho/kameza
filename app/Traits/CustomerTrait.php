@@ -68,7 +68,9 @@ trait CustomerTrait
     //check if use has an account
     public function checkIfCustomerHasAccount(string $phoneNumber)
     {
-        $getUser = DB::table('customer_subscription')->where('phone_number', $phoneNumber)->first();
+        $getUser = DB::table('customer_subscription')->where('phone_number', $phoneNumber)
+            ->where("is_active", 1)
+            ->first();
         if ($getUser) {
             return true;
         } else {
@@ -227,12 +229,11 @@ trait CustomerTrait
     }
 
     //get current custoer plan
-    public function getCustomerPlan(string $phoneNumber)
+    public function getCustomerPlans(string $phoneNumber)
     {
-        $customer = DB::table('customers')->where('phone_number', $phoneNumber)->first();
-
-        $plan = DB::table('subscription_plans')->where('id', $customer->subscription_plan_id)->first();
-        return $plan;
+        //get the total subscription plans of the customer
+        $total_plans = DB::table('customer_subscription')->where('phone_number', $phoneNumber)->get();
+        return count($total_plans);
     }
     //get user account
     public function getUserAccount(string $phoneNumber)
