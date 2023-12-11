@@ -13,6 +13,9 @@ class SubscriptionPlan extends Model
         'name',
         'description',
         'price',
+        'status',
+        'additional_info',
+        'additional_info_amount',
     ];
 
     //a plan belongs to many customers

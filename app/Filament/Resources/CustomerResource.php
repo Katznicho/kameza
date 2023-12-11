@@ -70,8 +70,7 @@ class CustomerResource extends Resource
                     ->copyable()
                     ->copyMessage('agent code copied')
                     ->copyMessageDuration(1500)
-                    ->label("Agent")
-                    ,
+                    ->label("Agent"),
                 Tables\Columns\TextColumn::make('phone_number')
                     ->searchable()
                     ->sortable()
