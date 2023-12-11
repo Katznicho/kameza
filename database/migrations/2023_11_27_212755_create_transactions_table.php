@@ -17,14 +17,14 @@ return new class extends Migration
             $table->string('amount');
             $table->string("payment_mode")->nullable();
             $table->string("payment_phone_number")->nullable();
-            $table->enum('type', ['debit', 'credit']);
+            $table->string("type");
             $table->string('status');
             $table->text('description');
             $table->string('reference');
             $table->string('network_code')->nullable();
             $table->string('service_code')->nullable();
             $table->foreignId("customer_id")->references("id")->on("customers")->onDelete("cascade")->nullable();
-             //subscription id
+            //subscription id
             $table->foreignId("subscription_plan_id")->references("id")->on("subscription_plans")->onDelete("cascade")->nullable();
             $table->softDeletes();
             $table->timestamps();

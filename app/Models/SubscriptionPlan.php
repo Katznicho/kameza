@@ -25,4 +25,10 @@ class SubscriptionPlan extends Model
     {
         return $this->belongsToMany(Customer::class, 'customer_subscription')->withTimestamps();
     }
+
+// a plan has a transaction
+    public function transactions()
+    {
+        return $this->hasMany(Transactions::class);
+    }
 }
